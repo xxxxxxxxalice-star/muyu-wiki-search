@@ -1,0 +1,260 @@
+
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>沐雨百科全書｜搜尋</title>
+<style>
+:root {
+  --bg: #e7e9df;
+  --card: #f5f5ee;
+  --dark: #465762;
+  --text: #34434b;
+  --muted: #78858a;
+  --accent: #849b88;
+  --border: #c4cec5;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  padding: 36px 18px;
+  background: var(--bg);
+  color: var(--text);
+  font-family: "Noto Serif TC", "Microsoft JhengHei", serif;
+}
+main { max-width: 900px; margin: auto; }
+header { text-align: center; margin-bottom: 28px; }
+h1 { color: var(--dark); letter-spacing: 4px; }
+.subtitle { color: var(--muted); }
+.search-box {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 18px;
+  box-shadow: 0 4px 14px #46576212;
+}
+input {
+  width: 100%;
+  padding: 15px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: white;
+  font-size: 16px;
+  color: var(--text);
+  outline: none;
+}
+input:focus { border-color: var(--accent); }
+#hint { color: var(--muted); font-size: 13px; margin-top: 9px; }
+#suggestions { margin-top: 8px; }
+.suggestion {
+  display: block;
+  padding: 12px;
+  border-radius: 8px;
+  color: var(--text);
+  text-decoration: none;
+}
+.suggestion:hover { background: #e6ebe3; }
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 22px 0;
+}
+.filters button {
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--dark);
+  padding: 9px 13px;
+  border-radius: 20px;
+  cursor: pointer;
+}
+.filters button.active,
+.filters button:hover {
+  background: var(--dark);
+  color: white;
+}
+h2 { color: var(--dark); font-size: 20px; }
+#results {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 14px;
+}
+.article {
+  display: block;
+  padding: 18px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  color: var(--text);
+  text-decoration: none;
+  transition: transform .15s, box-shadow .15s;
+}
+.article:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 5px 14px #46576218;
+}
+.article h3 { margin: 0 0 9px; color: var(--dark); }
+.tag { font-size: 12px; color: var(--accent); }
+.description { font-size: 14px; color: var(--muted); line-height: 1.7; }
+.empty { color: var(--muted); padding: 20px 0; }
+footer { text-align: center; margin-top: 38px; color: var(--muted); font-size: 12px; }
+</style>
+</head>
+<body>
+<main>
+<header>
+  <h1>沐雨百科全書</h1>
+  <div class="subtitle">修仙世界資料・萬象搜尋</div>
+</header>
+
+<section class="search-box">
+  <input id="search" type="search"
+    placeholder="輸入文章名稱、關鍵字或分類……"
+    autocomplete="off">
+  <div id="hint">輸入關鍵字，即可搜尋百科文章</div>
+  <div id="suggestions"></div>
+</section>
+
+<nav class="filters" id="filters"></nav>
+
+<h2 id="resultTitle">全部文章</h2>
+<section id="results"></section>
+
+<footer>沐雨百科全書 MUYU WIKI</footer>
+</main>
+
+<script>
+const categories = [
+  "全部",
+  "修仙境界",
+  "靈根系統",
+  "雷劫系統",
+  "功法系統",
+  "丹藥系統",
+  "靈獸系統",
+  "法寶系統",
+  "秘境系統",
+  "宗門系統",
+  "任務系統",
+  "材料與資源"
+];
+
+// 之後新增文章，只需要在這裡增加一筆資料
+const articles = [
+  {
+    title: "文章頁（待命名）",
+    category: "待分類",
+    keywords: ["沐雨", "百科", "文章"],
+    description: "這是目前提供的 Canva 文章頁，之後可以替換成正式標題與介紹。",
+    url: "https://muyusponsor.my.canva.site/page-2-2"
+  }
+];
+
+let selectedCategory = "全部";
+const search = document.getElementById("search");
+const filters = document.getElementById("filters");
+const results = document.getElementById("results");
+const suggestions = document.getElementById("suggestions");
+const hint = document.getElementById("hint");
+const resultTitle = document.getElementById("resultTitle");
+
+function matches(article, query) {
+  const text = [
+    article.title,
+    article.category,
+    article.description,
+    ...(article.keywords || [])
+  ].join(" ").toLowerCase();
+
+  return text.includes(query.toLowerCase());
+}
+
+function renderFilters() {
+  filters.innerHTML = "";
+  categories.forEach(category => {
+    const button = document.createElement("button");
+    button.textContent = category;
+    button.className = selectedCategory === category ? "active" : "";
+    button.onclick = () => {
+      selectedCategory = category;
+      render();
+    };
+    filters.appendChild(button);
+  });
+}
+
+function getFilteredArticles() {
+  const query = search.value.trim();
+  return articles.filter(article => {
+    const categoryMatch =
+      selectedCategory === "全部" ||
+      article.category === selectedCategory;
+    const searchMatch = !query || matches(article, query);
+    return categoryMatch && searchMatch;
+  });
+}
+
+function renderSuggestions() {
+  const query = search.value.trim();
+  suggestions.innerHTML = "";
+  if (!query) return;
+
+  const found = articles
+    .filter(article => matches(article, query))
+    .slice(0, 5);
+
+  found.forEach(article => {
+    const link = document.createElement("a");
+    link.className = "suggestion";
+    link.href = article.url;
+    link.textContent = article.title + " ・ " + article.category;
+    suggestions.appendChild(link);
+  });
+
+  if (found.length === 0) {
+    suggestions.textContent = "沒有找到符合的文章";
+    suggestions.className = "empty";
+  }
+}
+
+function render() {
+  renderFilters();
+  renderSuggestions();
+
+  const found = getFilteredArticles();
+  results.innerHTML = "";
+  resultTitle.textContent =
+    selectedCategory === "全部" ? "搜尋結果" : selectedCategory;
+
+  if (found.length === 0) {
+    results.innerHTML = '<div class="empty">目前沒有符合條件的文章。</div>';
+    return;
+  }
+
+  found.forEach(article => {
+    const card = document.createElement("a");
+    card.className = "article";
+    card.href = article.url;
+
+    const title = document.createElement("h3");
+    title.textContent = article.title;
+
+    const tag = document.createElement("div");
+    tag.className = "tag";
+    tag.textContent = article.category;
+
+    const description = document.createElement("p");
+    description.className = "description";
+    description.textContent = article.description;
+
+    card.append(title, tag, description);
+    results.appendChild(card);
+  });
+}
+
+search.addEventListener("input", render);
+render();
+</script>
+</body>
+</html>
